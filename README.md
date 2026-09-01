@@ -1,6 +1,3 @@
-# linux-openweight-model-rca
-Linux root-cause analysis of open-weight model performance degradation and crashes under CPU, memory, and I/O pressure.
-
 # Linux Perspective on an Open-Weight Model Crash
 
 **Proposed session for Open Source AI Summit 2026**  
@@ -15,6 +12,34 @@ In this session, the black box is an open-weight AI model running on Linux in th
 The session starts by establishing a healthy operating baseline for the inference workload. CPU, memory, I/O, process behavior, system logs, and relevant runtime signals are recorded so that expected behavior is understood before introducing a failure.
 
 The workload is then deliberately placed under CPU, memory, and I/O pressure, following it from normal operation through performance degradation and, where technically possible, to an actual crash or process termination.
+
+The objective is not to benchmark the model or compare model quality. The objective is to perform a root-cause analysis from the Linux operating-system perspective.
+
+## Open-Weight Model
+
+The primary workload selected for this study is **Microsoft Phi-4**, a 14-billion-parameter open-weight language model.
+
+Phi-4 was selected because it provides a useful middle ground for this experiment. It is large enough to create a meaningful Linux workload for observing CPU, memory, and I/O pressure, while remaining practical for controlled and reproducible experiments in a cloud-based Linux environment.
+
+Using a model that is too small could make resource exhaustion trivial and provide a limited degradation window before failure. At the same time, using a very large model would introduce unnecessary infrastructure complexity and could shift the focus of the study toward GPU capacity or large-scale inference rather than Linux root-cause analysis.
+
+Phi-4 allows the study to focus on the transition between:
+
+**normal operation → resource pressure → performance degradation → failure → RCA**
+
+The model will be treated as a black-box workload. The study does not evaluate its intelligence, accuracy, benchmark performance, or model architecture.
+
+### License
+
+Microsoft Phi-4 is publicly released under the **MIT License**.
+
+This is important for the project because the experiment is intended to remain based on publicly available and openly licensed technology. The model is used only as the workload for controlled Linux experiments and root-cause analysis.
+
+Official model page:
+
+https://huggingface.co/microsoft/phi-4
+
+The use of Phi-4 in this project does not imply endorsement, sponsorship, or official representation by Microsoft.
 
 ## Questions the session will explore
 
@@ -37,6 +62,28 @@ The workload is then deliberately placed under CPU, memory, and I/O pressure, fo
 7. Provide a defensible root-cause analysis.
 8. Identify containment and corrective actions.
 
+## Failure scenarios
+
+The initial study will focus on controlled pressure in three main areas:
+
+### CPU pressure
+
+CPU availability will be restricted or contention will be introduced to observe how the inference workload behaves as CPU resources become constrained.
+
+The RCA will investigate whether degradation is caused by CPU starvation, scheduling contention, throttling, or another system-level condition.
+
+### Memory pressure and exhaustion
+
+Available memory will be progressively constrained to observe the workload before and during memory pressure.
+
+The study will examine reclaim activity, page faults, process memory, Linux pressure indicators, cgroup events, and eventual OOM behavior where applicable.
+
+### I/O pressure
+
+Controlled storage contention will be introduced to observe how model loading and inference behavior change under I/O pressure.
+
+The RCA will investigate device latency, process I/O, I/O wait, task state, and other Linux evidence to distinguish an I/O bottleneck from CPU or memory problems.
+
 ## Toolbox
 
 The focus is on tools that Linux engineers already know and use in production environments, including:
@@ -52,11 +99,58 @@ The focus is on tools that Linux engineers already know and use in production en
 - historical system telemetry
 - core dumps and postmortem artifacts when applicable
 
-Deeper tools such as `perf`, stacks, tracing, or eBPF can be introduced only when the standard evidence is not sufficient.
+The investigation begins with standard Linux tools and escalates to deeper diagnostics only when the available evidence requires it.
+
+Additional tools may include:
+
+- `perf`
+- process and thread stacks
+- Pressure Stall Information (PSI)
+- tracing
+- eBPF / `bpftrace`
+- `coredumpctl`
+- historical telemetry such as `sar` or Performance Co-Pilot
+- support collection tools such as `sos report`
+
+## Real-time and postmortem RCA
+
+The study considers two different troubleshooting situations.
+
+### Real-time analysis
+
+When the workload is still running, Linux can expose live evidence such as:
+
+- CPU and memory utilization
+- process and thread state
+- page faults
+- resource pressure
+- scheduler behavior
+- system calls
+- I/O activity
+- cgroup resource accounting
+- runtime and kernel logs
+
+### Postmortem analysis
+
+When the workload has already crashed or been killed, some live evidence no longer exists.
+
+The investigation must then rely on persisted artifacts such as:
+
+- system and kernel journals
+- historical performance telemetry
+- cgroup event counters
+- process exit information
+- core dumps when applicable
+- OOM evidence
+- support collection reports
+
+A central goal of the project is to determine which evidence must be collected proactively so that a failure can still be explained after the process no longer exists.
 
 ## Why this matters
 
-Open-weight models are becoming another class of production workloads running on Linux. Once these workloads have availability and performance objectives, restarting a failed process is not enough.
+Open-weight models are becoming another class of production workloads running on Linux.
+
+Once these workloads have availability and performance objectives, restarting a failed process is not enough. Engineers need to understand what normal behavior looks like, where the workload's operating boundaries are, how degradation appears before failure, and what evidence can explain the incident afterward.
 
 When inference falls outside its expected operating envelope, engineers need to determine whether the cause is CPU starvation, memory pressure, I/O contention, a runtime failure, or another system-level condition.
 
@@ -70,7 +164,9 @@ Linux engineers, SREs, platform engineers, AI infrastructure engineers, support 
 
 I am a Senior Linux Escalation Engineer with 15+ years of experience supporting Linux workloads in enterprise environments, with a focus on advanced troubleshooting, cloud reliability, Linux security, and black-box root-cause analysis.
 
-At Oracle, I contributed to isolating and documenting 36 Oracle Linux and Oracle VM product bugs, with lessons from those investigations contributing to 74 technical documents. I currently deliver Linux technical training and mentoring to 60+ engineers and have presented internal technical brownbag sessions at Microsoft Azure on topics including CVE Management and Public Key Infrastructure (PKI).
+At Oracle, I contributed to isolating and documenting 36 Oracle Linux and Oracle VM product bugs, with lessons from those investigations contributing to 74 technical documents.
+
+I currently deliver Linux technical training and mentoring to 60+ engineers and have presented internal technical brownbag sessions at Microsoft Azure on topics including CVE Management and Public Key Infrastructure (PKI).
 
 ## Related work
 
@@ -79,5 +175,6 @@ At Oracle, I contributed to isolating and documenting 36 Oracle Linux and Oracle
 
 ---
 
-**Status:** Proposal / experimental work in progress.  
+**Status:** Proposal / experimental work in progress.
+
 The final session will include reproducible failure scenarios, collected Linux evidence, and RCA findings from the completed experiments.
