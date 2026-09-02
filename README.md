@@ -17,7 +17,7 @@ The objective is not to benchmark the model or compare model quality. The object
 
 ## Open-Weight Model
 
-The primary workload selected for this study is **Microsoft Phi-4**, a 14-billion-parameter open-weight language model.
+The primary workload selected for this study is Microsoft Phi-4, a 14-billion-parameter open-weight language model.
 
 Phi-4 was selected because it provides a useful middle ground for this experiment. It is large enough to create a meaningful Linux workload for observing CPU, memory, and I/O pressure, while remaining practical for controlled and reproducible experiments in a cloud-based Linux environment.
 
@@ -29,17 +29,58 @@ Phi-4 allows the study to focus on the transition between:
 
 The model will be treated as a black-box workload. The study does not evaluate its intelligence, accuracy, benchmark performance, or model architecture.
 
+### Model format
+
+The experiment will use the official Microsoft Phi-4 ONNX release published for ONNX Runtime inference.
+
+Microsoft publishes optimized Phi-4 ONNX variants for CPU and GPU execution across platforms including Linux. The initial laboratory configuration will use the official CPU INT4 variant:
+
+`cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4`
+
+The exact model revision, files, and hashes used in the experiments will be recorded in LAB 00 so the environment can be reproduced.
+
+Official ONNX model page:
+
+https://huggingface.co/microsoft/phi-4-onnx
+
+### Runtime
+
+The inference runtime selected for this study is Microsoft ONNX Runtime GenAI, an open-source runtime for generative AI models built on ONNX Runtime.
+
+ONNX Runtime GenAI was selected because it provides an official Microsoft open-source path for running Phi-family models while keeping the laboratory aligned with the objective of studying an AI workload from the Linux operating-system perspective.
+
+The model and runtime together will be treated as the application black box. The RCA will focus on what Linux can observe and explain when the workload experiences CPU, memory, or I/O pressure rather than debugging model internals.
+
+The exact ONNX Runtime GenAI version used in the experiments will be frozen and documented in LAB 00.
+
+Official runtime repository:
+
+https://github.com/microsoft/onnxruntime-genai
+
 ### License
 
-Microsoft Phi-4 is publicly released under the **MIT License**.
+The Microsoft Phi-4 ONNX model is released under the MIT License.
 
-This is important for the project because the experiment is intended to remain based on publicly available and openly licensed technology. The model is used only as the workload for controlled Linux experiments and root-cause analysis.
+Microsoft ONNX Runtime GenAI is also released under the MIT License.
 
-Official model page:
+This is important for the project because the experiment is intended to remain based on publicly available and openly licensed technology. The model and runtime are used only as components of controlled Linux experiments and root-cause analysis.
 
-https://huggingface.co/microsoft/phi-4
+The use of Microsoft Phi-4, ONNX Runtime GenAI, or Azure infrastructure in this independent project does not imply endorsement, sponsorship, or official representation by Microsoft.
 
-The use of Phi-4 in this project does not imply endorsement, sponsorship, or official representation by Microsoft.
+## Experimental stack
+
+| Component | Selection |
+|---|---|
+| Cloud environment | Azure VM |
+| Operating system | Linux; exact distribution, version, and kernel will be frozen in LAB 00 |
+| Open-weight model | Microsoft Phi-4, 14B |
+| Model format | Official Microsoft Phi-4 ONNX release |
+| Initial model configuration | `cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4` |
+| Inference runtime | Microsoft ONNX Runtime GenAI |
+| Runtime version | Frozen and documented in LAB 00 |
+| Initial execution | CPU-only |
+| Resource control | Linux cgroup v2 / systemd resource controls |
+| Objective | Linux root-cause analysis, not benchmarking |
 
 ## Questions the session will explore
 
